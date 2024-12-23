@@ -1,1 +1,4 @@
 wyoming==1.5.3
+numpy
+soundfile
+git+https://github.com/Amberg/IMS-Toucan.git

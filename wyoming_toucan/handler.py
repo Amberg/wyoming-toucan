@@ -8,6 +8,7 @@ import wave
 import soundfile as sf
 import numpy as np
 from typing import Any, Dict, Optional
+from InferenceInterfaces.ToucanTTSInterface import ToucanTTSInterface
 
 from wyoming.audio import AudioChunk, AudioStart, AudioStop
 from wyoming.error import Error
@@ -31,15 +32,19 @@ SUBTYPE_TO_BYTES = {
 class ToucanEventHandler(AsyncEventHandler):
     def __init__(
         self,
+        toucan_tts: ToucanTTSInterface,
         wyoming_info: Info,
         cli_args: argparse.Namespace,
         *args,
         **kwargs,
     ) -> None:
+        _LOGGER.debug("Initializing ToucanEventHandler")
         super().__init__(*args, **kwargs)
-
+        
+        self.tts = toucan_tts
         self.cli_args = cli_args
         self.wyoming_info_event = wyoming_info.event()
+        _LOGGER.debug("ToucanEventHandler initialized with TTS interface")
 
     async def handle_event(self, event: Event) -> bool:
         if Describe.is_type(event.type):
@@ -68,50 +73,32 @@ class ToucanEventHandler(AsyncEventHandler):
         # Join multiple lines
         text = " ".join(raw_text.strip().splitlines())
 
-        # some temp file
-        output_path = "/mnt/c/work/PiperStimmen/Generiert/output_20241223_154707.wav"
-        _LOGGER.debug(output_path)
+        # wave is a  NumPyArry
+        wave, sr = self.tts(text)
+        audio_data = wave.astype(np.float32)
         
-        # Use soundfile to read the WAVE file
-        with sf.SoundFile(output_path) as wav_file:
-            rate = wav_file.samplerate
-            channels = wav_file.channels
-            subtype = wav_file.subtype
+        channels = 1  # Mono Audio (falls mehrkanalig, entsprechend anpassen)
+        bytes_per_sample = 2 * channels  # 2 Bytes für 16-Bit PCM
+        
+        audio_bytes = (audio_data * 32767).astype(np.int16).tobytes()
+            
+        bytes_per_chunk = bytes_per_sample * self.cli_args.samples_per_chunk
+        num_chunks = int(math.ceil(len(audio_bytes) / bytes_per_chunk))
 
-            # Determine the byte size per sample
-            bytes_per_sample = SUBTYPE_TO_BYTES.get(subtype, 2) * channels
-
-            # Read the audio data and convert to PCM format if necessary
-            audio_data = wav_file.read(dtype='float32')
-            audio_bytes = (audio_data * 32767).astype(np.int16).tobytes()
-
+        # Split into chunks
+        for i in range(num_chunks):
+            offset = i * bytes_per_chunk
+            chunk = audio_bytes[offset : offset + bytes_per_chunk]
             await self.write_event(
-                AudioStart(
-                    rate=rate,
+                AudioChunk(
+                    audio=chunk,
+                    rate=sr,
                     width=2,  # 2 bytes for 16-bit PCM
                     channels=channels,
                 ).event(),
             )
 
-            bytes_per_chunk = bytes_per_sample * self.cli_args.samples_per_chunk
-            num_chunks = int(math.ceil(len(audio_bytes) / bytes_per_chunk))
-
-            # Split into chunks
-            for i in range(num_chunks):
-                offset = i * bytes_per_chunk
-                chunk = audio_bytes[offset : offset + bytes_per_chunk]
-                await self.write_event(
-                    AudioChunk(
-                        audio=chunk,
-                        rate=rate,
-                        width=2,  # 2 bytes for 16-bit PCM
-                        channels=channels,
-                    ).event(),
-                )
-
         await self.write_event(AudioStop().event())
         _LOGGER.debug("Completed request")
-
-        os.unlink(output_path)
 
         return True

@@ -6,26 +6,33 @@ from wyoming.info import Attribution, Info, TtsProgram, TtsVoice, TtsVoiceSpeake
 from wyoming.server import AsyncServer
 from functools import partial
 from .handler import ToucanEventHandler
+from InferenceInterfaces.ToucanTTSInterface import ToucanTTSInterface
 
 _LOGGER = logging.getLogger(__name__)
 
 async def main() -> None:
     parser = argparse.ArgumentParser()
-    print("Roucan Wyoming Server is starting...")
-        # Start server
+    print("Roucan Wyoming Server is initializing...")
+    # Start server
     server = AsyncServer.from_uri("tcp://0.0.0.0:10200")
-    _LOGGER.info("Ready")
+    _LOGGER.info("Server initialized")
     voices = [
-    TtsVoice("bruce Willis", 
-             installed=True,
-             description="A voice that sounds like Bruce Willis",
-             languages=["de"],
-                         attribution=Attribution(
-                            name="rhasspy", url="https://github.com/rhasspy/piper"
-                        ),
-                         version="1.0",
-             ),
+        TtsVoice(
+            "bruce Willis", 
+            installed=True,
+            description="A voice that sounds like Bruce Willis",
+            languages=["de"],
+            attribution=Attribution(
+                name="rhasspy", url="https://github.com/rhasspy/piper"
+            ),
+            version="1.0",
+        ),
     ]
+    # Initialize ToucanTTSInterface
+    toucan_tts = ToucanTTSInterface()
+    toucan_tts.set_language("deu")
+    toucan_tts.set_utterance_embedding("/mnt/c/work/PiperStimmen/BruceWillis/2.wav")
+    
     wyoming_info = Info(
         tts=[
             TtsProgram(
@@ -43,14 +50,17 @@ async def main() -> None:
     parser.add_argument("--samples-per-chunk", type=int, default=1024)
 
     args = parser.parse_args()
+    print("Roucan Wyoming Server is starting...")
 
+    _LOGGER.info("Starting server with ToucanEventHandler")
     await server.run(
         partial(
             ToucanEventHandler,
+            toucan_tts,
             wyoming_info,
-            args,
+            args
         )
-)
+    )
 
 if __name__ == "__main__":
     asyncio.run(main())
