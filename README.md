@@ -14,7 +14,7 @@ Thank you to the developers of these projects for their hard work and dedication
 
 ## Overview
 
-This project is a proof of concept, and it currently runs on my local Home Assistant (HA) installation. It showcases the integration of the Wyoming protocol with the Toucan text-to-speech system. While it’s not yet ready for full production use, it’s an exciting step toward making this functionality available.
+This project is a proof of concept, and it currently runs on my local Home Assistant (HA) installation. It showcases the integration of the Wyoming protocol with the Toucan text-to-speech system.
 
 ## Features
 
