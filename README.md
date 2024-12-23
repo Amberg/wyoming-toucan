@@ -2,7 +2,15 @@
 
 This repository provides a server implementation for the [Wyoming protocol](https://github.com/rhasspy/wyoming) designed to work with the [Toucan](https://github.com/DigitalPhonetics/IMS-Toucan) text-to-speech system.
 
-The code is based on the [Piper](https://github.com/rhasspy/piper/) repository, which is a powerful text-to-speech engine.
+The code is based on the [Piper](https://github.com/rhasspy/piper/) repository
+## Acknowledgements
+The majority of the work and functionality for this project comes from the following repositories, and all credit goes to their respective authors:
+
+- [Wyoming Protocol](https://github.com/rhasspy/wyoming)
+- [Toucan TTS](https://github.com/DigitalPhonetics/IMS-Toucan)
+- [Piper TTS](https://github.com/rhasspy/piper/)
+
+Thank you to the developers of these projects for their hard work and dedication!
 
 ## Overview
 
